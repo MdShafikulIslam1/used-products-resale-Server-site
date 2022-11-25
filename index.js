@@ -21,7 +21,8 @@ async function run() {
     try {
 
         const categoriesCollection = client.db('usedProducts').collection('categories');
-        const allProductsCollection = client.db('usedProducts').collection('allProducts')
+        const allProductsCollection = client.db('usedProducts').collection('allProducts');
+        const buyerBookingsCollection = client.db('usedProducts').collection('buyerBookings');
         //all categories loadded api 
         app.get('/categories', async (req, res) => {
             const query = {};
@@ -34,7 +35,13 @@ async function run() {
             const query = { category_id: id }
             const result = await allProductsCollection.find(query).toArray();
             res.send(result);
-        })
+        });
+        //Store buyers booking data on db using post method
+        app.post('/bookings', async (req, res) => {
+            const data = req.body;
+            const result = await buyerBookingsCollection.insertOne(data);
+            res.send(result);
+        });
     }
     finally {
 
