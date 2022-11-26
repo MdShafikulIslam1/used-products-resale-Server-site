@@ -23,6 +23,7 @@ async function run() {
         const categoriesCollection = client.db('usedProducts').collection('categories');
         const allProductsCollection = client.db('usedProducts').collection('allProducts');
         const buyerBookingsCollection = client.db('usedProducts').collection('buyerBookings');
+        const usersCollection = client.db('usedProducts').collection('users');
         //all categories loadded api 
         app.get('/categories', async (req, res) => {
             const query = {};
@@ -36,12 +37,33 @@ async function run() {
             const result = await allProductsCollection.find(query).toArray();
             res.send(result);
         });
+        //get allUsers in my website
+        app.get('/allUsers', async (req, res) => {
+            const query = {};
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        //check user is admin.if user is admin we send isAdmin is true unless false
+        app.get('/allUsers/admin', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isAdmin: user?.role == "admin" })
+        })
+
         //Store buyers booking data on db using post method
         app.post('/bookings', async (req, res) => {
             const data = req.body;
             const result = await buyerBookingsCollection.insertOne(data);
             res.send(result);
         });
+        //store all users with their role such is he admin,seller,buyers? for api
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        })
     }
     finally {
 
