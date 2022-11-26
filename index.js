@@ -37,6 +37,7 @@ async function run() {
             const result = await allProductsCollection.find(query).toArray();
             res.send(result);
         });
+
         //get allUsers in my website
         app.get('/allUsers', async (req, res) => {
             const query = {};
@@ -50,6 +51,15 @@ async function run() {
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             res.send({ isAdmin: user?.role == "admin" })
+        });
+
+        //My order data loaded api( using email )
+
+        app.get('/bookings/myOrders', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const result = await buyerBookingsCollection.find(query).toArray();
+            res.send(result);
         })
 
         //Store buyers booking data on db using post method
