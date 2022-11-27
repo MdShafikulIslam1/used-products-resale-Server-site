@@ -52,7 +52,13 @@ async function run() {
             const user = await usersCollection.findOne(query);
             res.send({ isAdmin: user?.role == "admin" })
         });
-
+        //check user is Seller.If user is seller we send isSeller is true unless false
+        app.get('/allUsers/seller', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isSeller: user?.role == "seller" })
+        })
         //My order data loaded api( using email )
 
         app.get('/bookings/myOrders', async (req, res) => {
