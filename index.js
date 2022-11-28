@@ -24,6 +24,7 @@ async function run() {
         const allProductsCollection = client.db('usedProducts').collection('allProducts');
         const buyerBookingsCollection = client.db('usedProducts').collection('buyerBookings');
         const usersCollection = client.db('usedProducts').collection('users');
+        const addProductsCollection = client.db('usedProducts').collection('addProducts');
         //all categories loadded api 
         app.get('/categories', async (req, res) => {
             const query = {};
@@ -66,6 +67,19 @@ async function run() {
             const query = { email: email };
             const result = await buyerBookingsCollection.find(query).toArray();
             res.send(result);
+        });
+
+        //get a specific field from a collection 
+        app.get('/addProductsData', async (req, res) => {
+            const query = {};
+            const result = await addProductsCollection.find(query).project({ category_name: 1 }).toArray();
+            res.send(result)
+        })
+        //store addProduct data on database
+        app.post('/addProductsData', async (req, res) => {
+            const data = req.body;
+            const result = await addProductsCollection.insertOne(data);
+            res.send(result)
         })
 
         //Store buyers booking data on db using post method
