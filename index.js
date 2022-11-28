@@ -74,6 +74,14 @@ async function run() {
             const query = {};
             const result = await addProductsCollection.find(query).project({ category_name: 1 }).toArray();
             res.send(result)
+        });
+
+        //load addProductsData all data using category_name query for API
+        app.get('/addProductsData/:category_name', async (req, res) => {
+            const category_name = req.params.category_name;
+            const query = { category_name: category_name };
+            const result = await addProductsCollection.find(query).toArray();
+            res.send(result)
         })
         //store addProduct data on database
         app.post('/addProductsData', async (req, res) => {
@@ -94,6 +102,21 @@ async function run() {
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
+
+
+        // make admin specific user by exact admin users for Api
+        app.put('/allusers/admin/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            }
+            const data = await usersCollection.updateOne(filter, updateDoc, options);
+            res.send(data)
+        })
         //delete a specific id (user) by Admin action for API
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
