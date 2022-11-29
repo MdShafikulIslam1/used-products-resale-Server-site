@@ -2,7 +2,7 @@ const express = require('express');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
 require('dotenv').config();
-
+const stripe = require("stripe")(process.env.SK);
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -25,6 +25,7 @@ async function run() {
         const buyerBookingsCollection = client.db('usedProducts').collection('buyerBookings');
         const usersCollection = client.db('usedProducts').collection('users');
         const addProductsCollection = client.db('usedProducts').collection('addProducts');
+        const paymentsCollection = client.db('usedProducts').collection('payments');
         //all categories loadded api 
         app.get('/categories', async (req, res) => {
             const query = {};
@@ -59,9 +60,52 @@ async function run() {
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             res.send({ isSeller: user?.role == "seller" })
-        })
-        //My order data loaded api( using email )
+        });
 
+        //order data load using a specefic order id ...a single order data loader API
+        app.get('/dashboard/payment/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await buyerBookingsCollection.findOne(query);
+            res.send(result);
+        })
+        //payment api
+        app.post("/create-payment-intent", async (req, res) => {
+            const order = req.body;
+            const price = order.price;
+            const amount = price * 100;
+
+            // Create a PaymentIntent with the order amount and currency
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: "usd",
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                ],
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
+        //store payment user transactioinId(paymentIntent.id),user name,user email etc on database for secure purpose
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+            const id = payment.orderId;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            };
+            const updateResult = await buyerBookingsCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+
+        //My order data loaded api( using email )
         app.get('/bookings/myOrders', async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
@@ -103,6 +147,20 @@ async function run() {
             res.send(result);
         });
 
+        //// make verified specific user(seller) by exact admin users for Api
+
+        app.put('/allUsers/seller/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    verification: true
+                }
+            };
+            const data = await usersCollection.updateOne(filter, updateDoc, options);
+            res.send(data)
+        })
 
         // make admin specific user by exact admin users for Api
         app.put('/allusers/admin/:id', async (req, res) => {
